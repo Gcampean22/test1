@@ -1,0 +1,40 @@
+import os
+import sys
+import time
+import shutil
+
+def copy_files(source, replica, log):
+    for item in os.listdir(source):
+        source_item = os.path.join(source, item)
+        replica_item = os.path.join(replica, item)
+
+        if os.path.isdir(source_item):
+            if not os.path.exists(replica_item):
+                os.mkdir(replica_item)
+                log.write(f"Created directory: {replica_item}\n")
+            copy_files(source_item, replica_item, log)
+        else:
+            if not os.path.exists(replica_item) or (os.path.exists(replica_item) and
+                                                    os.path.getmtime(source_item) > os.path.getmtime(replica_item)):
+                shutil.copy2(source_item, replica_item)
+                log.write(f"Copied file: {source_item} -> {replica_item}\n")
+
+def synchronize_folders(source_path, replica_path, log_file):
+    if not os.path.exists(replica_path):
+        os.makedirs(replica_path)
+
+    with open(log_file, 'a') as log:
+        log.write(f"Synchronization started at {time.ctime()}\n")
+        copy_files(source_path, replica_path, log)
+        log.write(f"Synchronization completed at {time.ctime()}\n")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python sync_folders.py source_folder replica_folder log_file")
+        sys.exit(1)
+
+    source_folder = sys.argv[1]
+    replica_folder = sys.argv[2]
+    log_file = sys.argv[3]
+
+    synchronize_folders(source_folder, replica_folder, log_file)
